@@ -138,6 +138,59 @@ public class StudentPageFrame extends JFrame {
         JScrollPane tableScroll = new JScrollPane(studentTable);
         tableScroll.setBounds(450, 110, 490, 450);
 
+        // Popup menu for table
+        JPopupMenu popupMenu = new JPopupMenu();
+        JMenuItem deleteItem = new JMenuItem("Delete");
+        JMenuItem updateItem = new JMenuItem("Update");
+        popupMenu.add(deleteItem);
+        popupMenu.add(updateItem);
+
+        studentTable.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                int row = studentTable.rowAtPoint(e.getPoint());
+                if (row >= 0) {
+                    studentTable.getSelectionModel().setSelectionInterval(row, row);
+                    if (SwingUtilities.isRightMouseButton(e)) {
+                        popupMenu.show(studentTable, e.getX(), e.getY());
+                    }
+                }
+            }
+        });
+
+        // Delete action
+        deleteItem.addActionListener(e -> {
+            int row = studentTable.getSelectedRow();
+            if (row >= 0) {
+                int studentId = (int) tableModel.getValueAt(row, 0);
+                int confirm = JOptionPane.showConfirmDialog(this, "Delete this student?", "Confirm Delete", JOptionPane.YES_NO_OPTION);
+                if (confirm == JOptionPane.YES_OPTION) {
+                    boolean success = studentDAO.deleteStudent(studentId);
+                    if (success) {
+                        JOptionPane.showMessageDialog(this, "Student deleted successfully!");
+                        loadStudents();
+                        clearFields();
+                    } else {
+                        JOptionPane.showMessageDialog(this, "Failed to delete student!", "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            }
+        });
+
+        // Update action (fills text fields for editing)
+        updateItem.addActionListener(e -> {
+            int row = studentTable.getSelectedRow();
+            if (row >= 0) {
+                studentIdField.setText(tableModel.getValueAt(row, 0).toString());
+                nameField.setText(tableModel.getValueAt(row, 1).toString());
+                nicField.setText(tableModel.getValueAt(row, 2).toString());
+                dobField.setText(tableModel.getValueAt(row, 3).toString());
+                genderCombo.setSelectedItem(tableModel.getValueAt(row, 4).toString());
+                emailField.setText(tableModel.getValueAt(row, 5).toString());
+                deptIdField.setText(tableModel.getValueAt(row, 6).toString());
+            }
+        });
+
         // Add components to frame
         add(topPanel);
         add(formPanel);
