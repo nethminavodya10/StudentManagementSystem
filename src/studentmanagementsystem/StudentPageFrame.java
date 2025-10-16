@@ -1,0 +1,217 @@
+package StudentManagementSystem;
+
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.List;
+
+public class StudentPageFrame extends JFrame {
+    // Form fields
+    private JTextField studentIdField, nameField, nicField, dobField, emailField, deptIdField;
+    private JComboBox<String> genderCombo;
+    private DefaultTableModel tableModel;
+    private StudentDAO studentDAO = new StudentDAO();
+
+    public StudentPageFrame() {
+        setTitle("Student Information Management System - Student");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(1050, 700);
+        setLocationRelativeTo(null);
+        setLayout(null);
+
+        // Top bar with title and back arrow
+        JPanel topPanel = new JPanel(null);
+        topPanel.setBackground(new Color(70, 130, 180));
+        topPanel.setBounds(0, 0, 1050, 60);
+
+        JButton backButton = new JButton();
+        backButton.setBounds(10, 10, 40, 40);
+        backButton.setBackground(new Color(255, 0, 0));
+        backButton.setBorderPainted(false);
+        backButton.setFocusPainted(false);
+        backButton.setIcon(new ImageIcon(new ImageIcon("src/studentmanagementsystem/images/back_arrow.png").getImage().getScaledInstance(30, 30, Image.SCALE_SMOOTH)));
+        backButton.addActionListener(e -> {
+            dispose();
+            new HomePageFrame();
+        });
+
+        JLabel titleLabel = new JLabel("Student Information Management System", JLabel.CENTER);
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
+        titleLabel.setForeground(Color.WHITE);
+        titleLabel.setBounds(60, 10, 950, 40);
+
+        topPanel.add(backButton);
+        topPanel.add(titleLabel);
+
+        // Left form panel
+        JPanel formPanel = new JPanel();
+        formPanel.setLayout(null);
+        formPanel.setBackground(new Color(210, 225, 245));
+        formPanel.setBounds(0, 60, 420, 500);
+
+        // Create fields
+        studentIdField = new JTextField();
+        nameField = new JTextField();
+        nicField = new JTextField();
+        dobField = new JTextField();
+        genderCombo = new JComboBox<>(new String[]{"Male", "Female", "Other"});
+        emailField = new JTextField();
+        deptIdField = new JTextField();
+
+
+        String[] labels = {"Student ID", "Name", "NIC", "DOB", "Gender", "Email", "Department ID"};
+        JTextField[] fields = {studentIdField, nameField, nicField, dobField, null, emailField, deptIdField};
+        int y = 30;
+        for (int i = 0; i < labels.length; i++) {
+            JButton lblBtn = new JButton(labels[i]);
+            lblBtn.setBounds(20, y, 120, 35);
+            lblBtn.setBackground(new Color(70, 130, 180));
+            lblBtn.setForeground(Color.WHITE);
+            lblBtn.setFont(new Font("Arial", Font.BOLD, 14));
+            lblBtn.setFocusPainted(false);
+            lblBtn.setEnabled(false);
+            formPanel.add(lblBtn);
+
+            if (labels[i].equals("Gender")) {
+                genderCombo.setBounds(150, y, 220, 35);
+                formPanel.add(genderCombo);
+            } else if (fields[i] != null) {
+                fields[i].setBounds(150, y, 220, 35);
+                fields[i].setFont(new Font("Arial", Font.PLAIN, 14));
+                formPanel.add(fields[i]);
+            }
+            y += 45;
+        }
+
+        // Action buttons
+        JButton addBtn = new JButton("Add");
+        addBtn.setBounds(20, 370, 90, 40);
+        addBtn.setBackground(new Color(25, 25, 112));
+        addBtn.setForeground(Color.WHITE);
+        addBtn.setFont(new Font("Arial", Font.BOLD, 14));
+        formPanel.add(addBtn);
+
+        JButton updateBtn = new JButton("Update");
+        updateBtn.setBounds(120, 370, 90, 40);
+        updateBtn.setBackground(new Color(25, 25, 112));
+        updateBtn.setForeground(Color.WHITE);
+        updateBtn.setFont(new Font("Arial", Font.BOLD, 14));
+        formPanel.add(updateBtn);
+
+        JButton deleteBtn = new JButton("Delete");
+        deleteBtn.setBounds(220, 370, 90, 40);
+        deleteBtn.setBackground(new Color(25, 25, 112));
+        deleteBtn.setForeground(Color.WHITE);
+        deleteBtn.setFont(new Font("Arial", Font.BOLD, 14));
+        formPanel.add(deleteBtn);
+
+        JButton clearBtn = new JButton("Clear");
+        clearBtn.setBounds(320, 370, 90, 40);
+        clearBtn.setBackground(new Color(25, 25, 112));
+        clearBtn.setForeground(Color.WHITE);
+        clearBtn.setFont(new Font("Arial", Font.BOLD, 14));
+        formPanel.add(clearBtn);
+
+        // Search bar
+        JLabel searchByLabel = new JLabel("Search By");
+        searchByLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        searchByLabel.setBounds(450, 70, 80, 30);
+
+        JTextField searchField = new JTextField();
+        searchField.setBounds(540, 70, 200, 30);
+
+        JButton searchBtn = new JButton("Search");
+        searchBtn.setBounds(750, 70, 90, 30);
+        searchBtn.setBackground(new Color(25, 25, 112));
+        searchBtn.setForeground(Color.WHITE);
+
+        JButton clearSearchBtn = new JButton("Clear");
+        clearSearchBtn.setBounds(850, 70, 90, 30);
+        clearSearchBtn.setBackground(new Color(25, 25, 112));
+        clearSearchBtn.setForeground(Color.WHITE);
+
+        // Table
+        String[] tableHeaders = {"Student ID", "Name", "NIC", "DOB", "Gender", "Email", "Department ID"};
+        tableModel = new DefaultTableModel(tableHeaders, 0);
+        JTable studentTable = new JTable(tableModel);
+        JScrollPane tableScroll = new JScrollPane(studentTable);
+        tableScroll.setBounds(450, 110, 490, 450);
+
+        // Add components to frame
+        add(topPanel);
+        add(formPanel);
+        add(searchByLabel);
+        add(searchField);
+        add(searchBtn);
+        add(clearSearchBtn);
+        add(tableScroll);
+
+        // Load students initially
+        loadStudents();
+
+        // Add button logic
+        addBtn.addActionListener(e -> {
+            String name = nameField.getText().trim();
+            String nic = nicField.getText().trim(); // <-- Add this line
+            String dob = dobField.getText().trim();
+            String gender = (String) genderCombo.getSelectedItem();
+            String email = emailField.getText().trim();
+            int deptId;
+            try {
+                deptId = Integer.parseInt(deptIdField.getText().trim());
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Department ID must be a number.", "Input Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            if (name.isEmpty() || nic.isEmpty() || dob.isEmpty() || gender.isEmpty() || email.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Please fill all fields!", "Input Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            if (!dob.matches("\\d{4}-\\d{2}-\\d{2}")) {
+                JOptionPane.showMessageDialog(this, "DOB must be in YYYY-MM-DD format.", "Input Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            Student student = new Student(0, name, nic, email, dob, gender, deptId); // <-- Pass NIC here
+            boolean success = studentDAO.addStudent(student);
+            if (success) {
+                JOptionPane.showMessageDialog(this, "Student added successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                loadStudents();
+                clearFields();
+            } else {
+                JOptionPane.showMessageDialog(this, "Failed to add student!", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        // Clear button logic
+        clearBtn.addActionListener(e -> clearFields());
+
+        setVisible(true);
+    }
+
+    private void loadStudents() {
+        tableModel.setRowCount(0);
+        List<Student> students = studentDAO.getAllStudents();
+        for (Student s : students) {
+            tableModel.addRow(new Object[]{
+                s.getStudentId(),
+                s.getName(),
+                s.getNic(), // <-- Show NIC value here
+                s.getDob(),
+                s.getGender(),
+                s.getEmail(),
+                s.getDeptId()
+            });
+        }
+    }
+
+    private void clearFields() {
+        studentIdField.setText("");
+        nameField.setText("");
+        nicField.setText("");
+        dobField.setText("");
+        genderCombo.setSelectedIndex(0);
+        emailField.setText("");
+        deptIdField.setText("");
+    }
+}
