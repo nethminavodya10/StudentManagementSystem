@@ -12,6 +12,8 @@ public class StudentPageFrame extends JFrame {
     private JComboBox<String> genderCombo;
     private DefaultTableModel tableModel;
     private StudentDAO studentDAO = new StudentDAO();
+    private JTextField searchField;
+    private JButton searchBtn, clearSearchBtn;
 
     public StudentPageFrame() {
         setTitle("Student Information Management System - Student");
@@ -99,15 +101,15 @@ public class StudentPageFrame extends JFrame {
         updateBtn.setFont(new Font("Arial", Font.BOLD, 14));
         formPanel.add(updateBtn);
 
-        JButton deleteBtn = new JButton("Delete");
-        deleteBtn.setBounds(220, 370, 90, 40);
-        deleteBtn.setBackground(new Color(25, 25, 112));
-        deleteBtn.setForeground(Color.WHITE);
-        deleteBtn.setFont(new Font("Arial", Font.BOLD, 14));
-        formPanel.add(deleteBtn);
+//        JButton deleteBtn = new JButton("Delete");
+//        deleteBtn.setBounds(220, 370, 90, 40);
+//        deleteBtn.setBackground(new Color(25, 25, 112));
+//        deleteBtn.setForeground(Color.WHITE);
+//        deleteBtn.setFont(new Font("Arial", Font.BOLD, 14));
+//        formPanel.add(deleteBtn);
 
         JButton clearBtn = new JButton("Clear");
-        clearBtn.setBounds(320, 370, 90, 40);
+        clearBtn.setBounds(220, 370, 90, 40);
         clearBtn.setBackground(new Color(25, 25, 112));
         clearBtn.setForeground(Color.WHITE);
         clearBtn.setFont(new Font("Arial", Font.BOLD, 14));
@@ -118,18 +120,21 @@ public class StudentPageFrame extends JFrame {
         searchByLabel.setFont(new Font("Arial", Font.BOLD, 14));
         searchByLabel.setBounds(450, 70, 80, 30);
 
-        JTextField searchField = new JTextField();
+        searchField = new JTextField();
         searchField.setBounds(540, 70, 200, 30);
+        add(searchField);
 
-        JButton searchBtn = new JButton("Search");
+        searchBtn = new JButton("Search");
         searchBtn.setBounds(750, 70, 90, 30);
         searchBtn.setBackground(new Color(25, 25, 112));
         searchBtn.setForeground(Color.WHITE);
+        add(searchBtn);
 
-        JButton clearSearchBtn = new JButton("Clear");
+        clearSearchBtn = new JButton("Clear");
         clearSearchBtn.setBounds(850, 70, 90, 30);
         clearSearchBtn.setBackground(new Color(25, 25, 112));
         clearSearchBtn.setForeground(Color.WHITE);
+        add(clearSearchBtn);
 
         // Table
         String[] tableHeaders = {"Student ID", "Name", "NIC", "DOB", "Gender", "Email", "Department ID"};
@@ -137,6 +142,59 @@ public class StudentPageFrame extends JFrame {
         JTable studentTable = new JTable(tableModel);
         JScrollPane tableScroll = new JScrollPane(studentTable);
         tableScroll.setBounds(450, 110, 490, 450);
+
+        // Popup menu for table
+        JPopupMenu popupMenu = new JPopupMenu();
+        JMenuItem deleteItem = new JMenuItem("Delete");
+        JMenuItem updateItem = new JMenuItem("Update");
+        popupMenu.add(deleteItem);
+        popupMenu.add(updateItem);
+
+        studentTable.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                int row = studentTable.rowAtPoint(e.getPoint());
+                if (row >= 0) {
+                    studentTable.getSelectionModel().setSelectionInterval(row, row);
+                    if (SwingUtilities.isRightMouseButton(e)) {
+                        popupMenu.show(studentTable, e.getX(), e.getY());
+                    }
+                }
+            }
+        });
+
+        // Delete action
+        deleteItem.addActionListener(e -> {
+            int row = studentTable.getSelectedRow();
+            if (row >= 0) {
+                int studentId = (int) tableModel.getValueAt(row, 0);
+                int confirm = JOptionPane.showConfirmDialog(this, "Delete this student?", "Confirm Delete", JOptionPane.YES_NO_OPTION);
+                if (confirm == JOptionPane.YES_OPTION) {
+                    boolean success = studentDAO.deleteStudent(studentId);
+                    if (success) {
+                        JOptionPane.showMessageDialog(this, "Student deleted successfully!");
+                        loadStudents();
+                        clearFields();
+                    } else {
+                        JOptionPane.showMessageDialog(this, "Failed to delete student!", "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            }
+        });
+
+        // Update action (fills text fields for editing)
+        updateItem.addActionListener(e -> {
+            int row = studentTable.getSelectedRow();
+            if (row >= 0) {
+                studentIdField.setText(tableModel.getValueAt(row, 0).toString());
+                nameField.setText(tableModel.getValueAt(row, 1).toString());
+                nicField.setText(tableModel.getValueAt(row, 2).toString());
+                dobField.setText(tableModel.getValueAt(row, 3).toString());
+                genderCombo.setSelectedItem(tableModel.getValueAt(row, 4).toString());
+                emailField.setText(tableModel.getValueAt(row, 5).toString());
+                deptIdField.setText(tableModel.getValueAt(row, 6).toString());
+            }
+        });
 
         // Add components to frame
         add(topPanel);
@@ -183,8 +241,62 @@ public class StudentPageFrame extends JFrame {
             }
         });
 
+        // Update button logic
+        updateBtn.addActionListener(e -> {
+            int studentId;
+            try {
+                studentId = Integer.parseInt(studentIdField.getText().trim());
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Student ID must be a number.", "Input Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            String name = nameField.getText().trim();
+            String nic = nicField.getText().trim();
+            String dob = dobField.getText().trim();
+            String gender = (String) genderCombo.getSelectedItem();
+            String email = emailField.getText().trim();
+            int deptId;
+            try {
+                deptId = Integer.parseInt(deptIdField.getText().trim());
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Department ID must be a number.", "Input Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            if (name.isEmpty() || nic.isEmpty() || dob.isEmpty() || gender.isEmpty() || email.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Please fill all fields!", "Input Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            if (!dob.matches("\\d{4}-\\d{2}-\\d{2}")) {
+                JOptionPane.showMessageDialog(this, "DOB must be in YYYY-MM-DD format.", "Input Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            Student student = new Student(studentId, name, nic, email, dob, gender, deptId);
+            boolean success = studentDAO.updateStudent(student);
+            if (success) {
+                JOptionPane.showMessageDialog(this, "Student updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                loadStudents();
+                clearFields();
+            } else {
+                JOptionPane.showMessageDialog(this, "Failed to update student!", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
         // Clear button logic
         clearBtn.addActionListener(e -> clearFields());
+
+        // Search button logic
+        searchBtn.addActionListener(e -> {
+            String keyword = searchField.getText().trim();
+            if (!keyword.isEmpty()) {
+                loadStudents(studentDAO.searchStudents(keyword));
+            }
+        });
+
+        // Clear search button logic
+        clearSearchBtn.addActionListener(e -> {
+            searchField.setText("");
+            loadStudents(studentDAO.getAllStudents());
+        });
 
         setVisible(true);
     }
@@ -197,6 +309,21 @@ public class StudentPageFrame extends JFrame {
                 s.getStudentId(),
                 s.getName(),
                 s.getNic(), // <-- Show NIC value here
+                s.getDob(),
+                s.getGender(),
+                s.getEmail(),
+                s.getDeptId()
+            });
+        }
+    }
+
+    private void loadStudents(List<Student> students) {
+        tableModel.setRowCount(0);
+        for (Student s : students) {
+            tableModel.addRow(new Object[]{
+                s.getStudentId(),
+                s.getName(),
+                s.getNic(),
                 s.getDob(),
                 s.getGender(),
                 s.getEmail(),
