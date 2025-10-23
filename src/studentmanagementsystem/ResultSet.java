@@ -8,6 +8,6 @@ package studentmanagementsystem;
  *
  * @author Nethmi Navodya
  */
-class ResultSet {
+public class ResultSet {
     
 }
