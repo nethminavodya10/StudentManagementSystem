@@ -5,6 +5,11 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.sql.*;
+import java.sql.ResultSet;
+
+
+
 
 public class DepartmentPageFrame extends JFrame {
     private JTextField deptIdField, deptNameField, buildingField, phoneField, headField;
