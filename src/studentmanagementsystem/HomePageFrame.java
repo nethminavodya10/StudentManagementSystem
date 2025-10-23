@@ -30,7 +30,7 @@ public class HomePageFrame extends JFrame {
 
         logoPanel.add(logoLabel);
 
-        // System name
+        // System name files
         JLabel systemLabel = new JLabel("<html><center>Student Information<br>Management System</center></html>");
         systemLabel.setFont(new Font("Arial", Font.BOLD, 22));
         systemLabel.setForeground(Color.WHITE);
