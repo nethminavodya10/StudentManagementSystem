@@ -64,7 +64,7 @@ public class HomePageFrame extends JFrame {
 
         JLabel welcomeLabel = new JLabel("<html><center>Welcome to<br><b>Student Information Management System</b></center></html>", JLabel.CENTER);
         welcomeLabel.setFont(new Font("Arial", Font.BOLD, 22));
-        welcomeLabel.setBounds(40, 20, 400, 80);
+        welcomeLabel.setBounds(120, 30, 400, 60);
         rightPanel.add(welcomeLabel);
 
         String[] features = {"Student", "Course", "Department", "Enrollment"};
