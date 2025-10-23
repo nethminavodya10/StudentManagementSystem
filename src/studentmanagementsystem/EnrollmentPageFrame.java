@@ -162,10 +162,6 @@ public class EnrollmentPageFrame extends JFrame {
             // Implement update logic here
         });
 
-        deleteBtn.addActionListener(e -> {
-            // Implement delete logic here
-        });
-
         clearBtn.addActionListener(e -> clearFields());
 
         setVisible(true);
