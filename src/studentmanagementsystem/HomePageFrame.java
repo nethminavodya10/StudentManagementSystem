@@ -30,7 +30,7 @@ public class HomePageFrame extends JFrame {
 
         logoPanel.add(logoLabel);
 
-        // System name
+        // System name files
         JLabel systemLabel = new JLabel("<html><center>Student Information<br>Management System</center></html>");
         systemLabel.setFont(new Font("Arial", Font.BOLD, 22));
         systemLabel.setForeground(Color.WHITE);
@@ -64,7 +64,7 @@ public class HomePageFrame extends JFrame {
 
         JLabel welcomeLabel = new JLabel("<html><center>Welcome to<br><b>Student Information Management System</b></center></html>", JLabel.CENTER);
         welcomeLabel.setFont(new Font("Arial", Font.BOLD, 22));
-        welcomeLabel.setBounds(120, 30, 400, 60);
+        welcomeLabel.setBounds(40, 20, 400, 80);
         rightPanel.add(welcomeLabel);
 
         String[] features = {"Student", "Course", "Department", "Enrollment"};

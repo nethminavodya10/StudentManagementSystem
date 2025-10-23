@@ -1,6 +1,7 @@
 package StudentManagementSystem;
 
 import java.sql.*;
+import java.sql.ResultSet;
 
 public class AuthService {
     public User authenticate(String username, String password) {
