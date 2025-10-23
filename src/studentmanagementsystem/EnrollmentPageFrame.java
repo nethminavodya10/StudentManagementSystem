@@ -87,15 +87,9 @@ public class EnrollmentPageFrame extends JFrame {
         updateBtn.setFont(new Font("Arial", Font.BOLD, 14));
         formPanel.add(updateBtn);
 
-        JButton deleteBtn = new JButton("Delete");
-        deleteBtn.setBounds(212, 370, 90, 40);
-        deleteBtn.setBackground(new Color(25, 25, 112));
-        deleteBtn.setForeground(Color.WHITE);
-        deleteBtn.setFont(new Font("Arial", Font.BOLD, 14));
-        formPanel.add(deleteBtn);
 
         JButton clearBtn = new JButton("Clear");
-        clearBtn.setBounds(312, 370, 90, 40);
+        clearBtn.setBounds(212, 370, 90, 40);
         clearBtn.setBackground(new Color(25, 25, 112));
         clearBtn.setForeground(Color.WHITE);
         clearBtn.setFont(new Font("Arial", Font.BOLD, 14));

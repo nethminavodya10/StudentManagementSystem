@@ -5,10 +5,14 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.List;
+import java.util.Date;
+import java.text.SimpleDateFormat;
+import java.text.ParseException;
 
 public class StudentPageFrame extends JFrame {
     // Form fields
-    private JTextField studentIdField, nameField, nicField, dobField, emailField, deptIdField;
+    private JTextField studentIdField, nameField, nicField, emailField, deptIdField;
+    private JSpinner dobSpinner;
     private JComboBox<String> genderCombo;
     private DefaultTableModel tableModel;
     private StudentDAO studentDAO = new StudentDAO();
@@ -56,14 +60,15 @@ public class StudentPageFrame extends JFrame {
         studentIdField = new JTextField();
         nameField = new JTextField();
         nicField = new JTextField();
-        dobField = new JTextField();
+        dobSpinner = new JSpinner(new SpinnerDateModel());
+        dobSpinner.setEditor(new JSpinner.DateEditor(dobSpinner, "yyyy-MM-dd"));
         genderCombo = new JComboBox<>(new String[]{"Male", "Female", "Other"});
         emailField = new JTextField();
         deptIdField = new JTextField();
 
 
         String[] labels = {"Student ID", "Name", "NIC", "DOB", "Gender", "Email", "Department ID"};
-        JTextField[] fields = {studentIdField, nameField, nicField, dobField, null, emailField, deptIdField};
+        JTextField[] fields = {studentIdField, nameField, nicField, null, null, emailField, deptIdField};
         int y = 30;
         for (int i = 0; i < labels.length; i++) {
             JButton lblBtn = new JButton(labels[i]);
@@ -78,6 +83,9 @@ public class StudentPageFrame extends JFrame {
             if (labels[i].equals("Gender")) {
                 genderCombo.setBounds(150, y, 220, 35);
                 formPanel.add(genderCombo);
+            } else if (labels[i].equals("DOB")) {
+                dobSpinner.setBounds(150, y, 220, 35);
+                formPanel.add(dobSpinner);
             } else if (fields[i] != null) {
                 fields[i].setBounds(150, y, 220, 35);
                 fields[i].setFont(new Font("Arial", Font.PLAIN, 14));
@@ -189,7 +197,12 @@ public class StudentPageFrame extends JFrame {
                 studentIdField.setText(tableModel.getValueAt(row, 0).toString());
                 nameField.setText(tableModel.getValueAt(row, 1).toString());
                 nicField.setText(tableModel.getValueAt(row, 2).toString());
-                dobField.setText(tableModel.getValueAt(row, 3).toString());
+                try {
+                    Date parsed = new SimpleDateFormat("yyyy-MM-dd").parse(tableModel.getValueAt(row, 3).toString());
+                    dobSpinner.setValue(parsed);
+                } catch (ParseException ex) {
+                    dobSpinner.setValue(new Date());
+                }
                 genderCombo.setSelectedItem(tableModel.getValueAt(row, 4).toString());
                 emailField.setText(tableModel.getValueAt(row, 5).toString());
                 deptIdField.setText(tableModel.getValueAt(row, 6).toString());
@@ -212,7 +225,9 @@ public class StudentPageFrame extends JFrame {
         addBtn.addActionListener(e -> {
             String name = nameField.getText().trim();
             String nic = nicField.getText().trim(); // <-- Add this line
-            String dob = dobField.getText().trim();
+            String dob;
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            dob = sdf.format((Date) dobSpinner.getValue());
             String gender = (String) genderCombo.getSelectedItem();
             String email = emailField.getText().trim();
             int deptId;
@@ -252,7 +267,7 @@ public class StudentPageFrame extends JFrame {
             }
             String name = nameField.getText().trim();
             String nic = nicField.getText().trim();
-            String dob = dobField.getText().trim();
+            String dob = new SimpleDateFormat("yyyy-MM-dd").format((Date) dobSpinner.getValue());
             String gender = (String) genderCombo.getSelectedItem();
             String email = emailField.getText().trim();
             int deptId;
@@ -336,7 +351,7 @@ public class StudentPageFrame extends JFrame {
         studentIdField.setText("");
         nameField.setText("");
         nicField.setText("");
-        dobField.setText("");
+        dobSpinner.setValue(new Date());
         genderCombo.setSelectedIndex(0);
         emailField.setText("");
         deptIdField.setText("");
