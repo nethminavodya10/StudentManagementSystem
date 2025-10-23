@@ -9,8 +9,6 @@ import java.sql.*;
 import java.sql.ResultSet;
 
 
-
-
 public class DepartmentPageFrame extends JFrame {
     private JTextField deptIdField, deptNameField, buildingField, phoneField, headField;
     private DefaultTableModel tableModel;
