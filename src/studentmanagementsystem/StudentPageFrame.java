@@ -8,21 +8,25 @@ import java.util.List;
 import java.util.Date;
 import java.text.SimpleDateFormat;
 import java.text.ParseException;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 public class StudentPageFrame extends JFrame {
     // Form fields
-    private JTextField studentIdField, nameField, nicField, emailField, deptIdField;
+    private JTextField studentIdField, nameField, nicField, emailField;
+    private JComboBox<Integer> deptCombo;
     private JSpinner dobSpinner;
     private JComboBox<String> genderCombo;
     private DefaultTableModel tableModel;
     private StudentDAO studentDAO = new StudentDAO();
+    private DepartmentDAO departmentDAO = new DepartmentDAO();
     private JTextField searchField;
     private JButton searchBtn, clearSearchBtn;
 
     public StudentPageFrame() {
         setTitle("Student Information Management System - Student");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1050, 700);
+        setSize(1100, 700);
         setLocationRelativeTo(null);
         setLayout(null);
 
@@ -32,11 +36,12 @@ public class StudentPageFrame extends JFrame {
         topPanel.setBounds(0, 0, 1050, 60);
 
         JButton backButton = new JButton();
-        backButton.setBounds(10, 10, 40, 40);
+        backButton.setBounds(10, 10, 30, 30);
         backButton.setBackground(new Color(255, 0, 0));
         backButton.setBorderPainted(false);
         backButton.setFocusPainted(false);
-        backButton.setIcon(new ImageIcon(new ImageIcon("src/studentmanagementsystem/images/back_arrow.png").getImage().getScaledInstance(30, 30, Image.SCALE_SMOOTH)));
+        backButton.setIcon(new ImageIcon(
+                new ImageIcon("src/images/back_arrow.png").getImage().getScaledInstance(20, 20, Image.SCALE_SMOOTH)));
         backButton.addActionListener(e -> {
             dispose();
             new HomePageFrame();
@@ -61,24 +66,51 @@ public class StudentPageFrame extends JFrame {
         nameField = new JTextField();
         nicField = new JTextField();
         dobSpinner = new JSpinner(new SpinnerDateModel());
-        dobSpinner.setEditor(new JSpinner.DateEditor(dobSpinner, "yyyy-MM-dd"));
+        JSpinner.DateEditor dateEditor = new JSpinner.DateEditor(dobSpinner, "yyyy-MM-dd");
+        dobSpinner.setEditor(dateEditor);
+        // make the displayed text non-editable and clickable
+        JFormattedTextField dobTextField = dateEditor.getTextField();
+        dobTextField.setEditable(false);
+        dobTextField.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        dobTextField.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                Window win = SwingUtilities.getWindowAncestor(dobTextField);
+                Frame owner = (win instanceof Frame) ? (Frame) win : null;
+                Date initial = (Date) dobSpinner.getValue();
+                DatePickerDialog picker = new DatePickerDialog(owner, initial);
+                picker.setLocationRelativeTo(dobTextField);
+                picker.setVisible(true);
+                Date picked = picker.getSelectedDate();
+                if (picked != null) {
+                    dobSpinner.setValue(picked);
+                }
+            }
+        });
+        dobSpinner.setBounds(150, 130, 220, 35); // keep same placement as before
+        formPanel.add(dobSpinner);
         genderCombo = new JComboBox<>(new String[]{"Male", "Female", "Other"});
         emailField = new JTextField();
-        deptIdField = new JTextField();
-
+        // Department combo populated from DB
+        deptCombo = new JComboBox<>();
+        for (Department d : departmentDAO.getAllDepartments()) {
+            deptCombo.addItem(d.getDeptId());
+        }
 
         String[] labels = {"Student ID", "Name", "NIC", "DOB", "Gender", "Email", "Department ID"};
-        JTextField[] fields = {studentIdField, nameField, nicField, null, null, emailField, deptIdField};
-        int y = 30;
+        // leave last element null so we can place deptCombo explicitly
+        JTextField[] fields = { studentIdField, nameField, nicField, null, null, emailField, null };
+        int y = 40;
         for (int i = 0; i < labels.length; i++) {
-            JButton lblBtn = new JButton(labels[i]);
-            lblBtn.setBounds(20, y, 120, 35);
-            lblBtn.setBackground(new Color(70, 130, 180));
-            lblBtn.setForeground(Color.WHITE);
-            lblBtn.setFont(new Font("Arial", Font.BOLD, 14));
-            lblBtn.setFocusPainted(false);
-            lblBtn.setEnabled(false);
-            formPanel.add(lblBtn);
+            // use JLabel (opaque) so text remains white instead of gray (disabled JButton)
+            JLabel lbl = new JLabel(labels[i], SwingConstants.CENTER);
+            lbl.setBounds(20, y, 120, 35);
+            lbl.setOpaque(true);
+            lbl.setBackground(new Color(70, 130, 180));
+            lbl.setForeground(Color.WHITE);
+            lbl.setFont(new Font("Arial", Font.BOLD, 14));
+            lbl.setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 0));
+            formPanel.add(lbl);
 
             if (labels[i].equals("Gender")) {
                 genderCombo.setBounds(150, y, 220, 35);
@@ -86,6 +118,9 @@ public class StudentPageFrame extends JFrame {
             } else if (labels[i].equals("DOB")) {
                 dobSpinner.setBounds(150, y, 220, 35);
                 formPanel.add(dobSpinner);
+            } else if (labels[i].equals("Department ID")) {
+                deptCombo.setBounds(150, y, 220, 35);
+                formPanel.add(deptCombo);
             } else if (fields[i] != null) {
                 fields[i].setBounds(150, y, 220, 35);
                 fields[i].setFont(new Font("Arial", Font.PLAIN, 14));
@@ -96,28 +131,21 @@ public class StudentPageFrame extends JFrame {
 
         // Action buttons
         JButton addBtn = new JButton("Add");
-        addBtn.setBounds(20, 370, 90, 40);
+        addBtn.setBounds(50, 370, 90, 40);
         addBtn.setBackground(new Color(25, 25, 112));
         addBtn.setForeground(Color.WHITE);
         addBtn.setFont(new Font("Arial", Font.BOLD, 14));
         formPanel.add(addBtn);
 
         JButton updateBtn = new JButton("Update");
-        updateBtn.setBounds(120, 370, 90, 40);
+        updateBtn.setBounds(160, 370, 90, 40);
         updateBtn.setBackground(new Color(25, 25, 112));
         updateBtn.setForeground(Color.WHITE);
         updateBtn.setFont(new Font("Arial", Font.BOLD, 14));
         formPanel.add(updateBtn);
 
-//        JButton deleteBtn = new JButton("Delete");
-//        deleteBtn.setBounds(220, 370, 90, 40);
-//        deleteBtn.setBackground(new Color(25, 25, 112));
-//        deleteBtn.setForeground(Color.WHITE);
-//        deleteBtn.setFont(new Font("Arial", Font.BOLD, 14));
-//        formPanel.add(deleteBtn);
-
         JButton clearBtn = new JButton("Clear");
-        clearBtn.setBounds(220, 370, 90, 40);
+        clearBtn.setBounds(270, 370, 90, 40);
         clearBtn.setBackground(new Color(25, 25, 112));
         clearBtn.setForeground(Color.WHITE);
         clearBtn.setFont(new Font("Arial", Font.BOLD, 14));
@@ -149,7 +177,7 @@ public class StudentPageFrame extends JFrame {
         tableModel = new DefaultTableModel(tableHeaders, 0);
         JTable studentTable = new JTable(tableModel);
         JScrollPane tableScroll = new JScrollPane(studentTable);
-        tableScroll.setBounds(450, 110, 490, 450);
+        tableScroll.setBounds(430, 110, 640, 450);
 
         // Popup menu for table
         JPopupMenu popupMenu = new JPopupMenu();
@@ -205,7 +233,13 @@ public class StudentPageFrame extends JFrame {
                 }
                 genderCombo.setSelectedItem(tableModel.getValueAt(row, 4).toString());
                 emailField.setText(tableModel.getValueAt(row, 5).toString());
-                deptIdField.setText(tableModel.getValueAt(row, 6).toString());
+                // set selected department id in combo
+                try {
+                    Integer did = Integer.parseInt(tableModel.getValueAt(row, 6).toString());
+                    deptCombo.setSelectedItem(did);
+                } catch (Exception ex) {
+                    deptCombo.setSelectedIndex(-1);
+                }
             }
         });
 
@@ -224,28 +258,46 @@ public class StudentPageFrame extends JFrame {
         // Add button logic
         addBtn.addActionListener(e -> {
             String name = nameField.getText().trim();
-            String nic = nicField.getText().trim(); // <-- Add this line
-            String dob;
+            String nic = nicField.getText().trim();
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-            dob = sdf.format((Date) dobSpinner.getValue());
+            String dob = sdf.format((Date) dobSpinner.getValue());
             String gender = (String) genderCombo.getSelectedItem();
             String email = emailField.getText().trim();
-            int deptId;
-            try {
-                deptId = Integer.parseInt(deptIdField.getText().trim());
-            } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(this, "Department ID must be a number.", "Input Error", JOptionPane.ERROR_MESSAGE);
+            Integer deptId = (Integer) deptCombo.getSelectedItem();
+
+            // Basic required checks
+            if (name.isEmpty() || nic.isEmpty() || dob.isEmpty() || gender == null || email.isEmpty()
+                    || deptId == null) {
+                JOptionPane.showMessageDialog(this, "Please fill all fields and select Department.", "Input Error",
+                        JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            if (name.isEmpty() || nic.isEmpty() || dob.isEmpty() || gender.isEmpty() || email.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Please fill all fields!", "Input Error", JOptionPane.ERROR_MESSAGE);
+            // Name length check
+            if (name.length() < 2 || name.length() > 100) {
+                JOptionPane.showMessageDialog(this, "Name must be 2-100 characters.", "Input Error",
+                        JOptionPane.ERROR_MESSAGE);
                 return;
             }
+            // NIC basic validation (length 5-20)
+            if (nic.length() < 5 || nic.length() > 20) {
+                JOptionPane.showMessageDialog(this, "NIC must be 5-20 characters.", "Input Error",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            // DOB format already produced by spinner; still validate pattern
             if (!dob.matches("\\d{4}-\\d{2}-\\d{2}")) {
                 JOptionPane.showMessageDialog(this, "DOB must be in YYYY-MM-DD format.", "Input Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            Student student = new Student(0, name, nic, email, dob, gender, deptId); // <-- Pass NIC here
+            // Email simple regex
+            Pattern emailPattern = Pattern.compile("^[\\w\\.-]+@[\\w\\.-]+\\.[a-zA-Z]{2,}$");
+            Matcher m = emailPattern.matcher(email);
+            if (!m.matches()) {
+                JOptionPane.showMessageDialog(this, "Invalid email address.", "Input Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            Student student = new Student(0, name, nic, email, dob, gender, deptId);
             boolean success = studentDAO.addStudent(student);
             if (success) {
                 JOptionPane.showMessageDialog(this, "Student added successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
@@ -258,9 +310,15 @@ public class StudentPageFrame extends JFrame {
 
         // Update button logic
         updateBtn.addActionListener(e -> {
+            String idText = studentIdField.getText().trim();
+            if (idText.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Student ID is required to update.", "Input Error",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
             int studentId;
             try {
-                studentId = Integer.parseInt(studentIdField.getText().trim());
+                studentId = Integer.parseInt(idText);
             } catch (NumberFormatException ex) {
                 JOptionPane.showMessageDialog(this, "Student ID must be a number.", "Input Error", JOptionPane.ERROR_MESSAGE);
                 return;
@@ -270,11 +328,10 @@ public class StudentPageFrame extends JFrame {
             String dob = new SimpleDateFormat("yyyy-MM-dd").format((Date) dobSpinner.getValue());
             String gender = (String) genderCombo.getSelectedItem();
             String email = emailField.getText().trim();
-            int deptId;
-            try {
-                deptId = Integer.parseInt(deptIdField.getText().trim());
-            } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(this, "Department ID must be a number.", "Input Error", JOptionPane.ERROR_MESSAGE);
+            Integer deptId = (Integer) deptCombo.getSelectedItem();
+            if (deptId == null) {
+                JOptionPane.showMessageDialog(this, "Please select a Department.", "Input Error",
+                        JOptionPane.ERROR_MESSAGE);
                 return;
             }
             if (name.isEmpty() || nic.isEmpty() || dob.isEmpty() || gender.isEmpty() || email.isEmpty()) {
@@ -283,6 +340,11 @@ public class StudentPageFrame extends JFrame {
             }
             if (!dob.matches("\\d{4}-\\d{2}-\\d{2}")) {
                 JOptionPane.showMessageDialog(this, "DOB must be in YYYY-MM-DD format.", "Input Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            Pattern emailPattern = Pattern.compile("^[\\w\\.-]+@[\\w\\.-]+\\.[a-zA-Z]{2,}$");
+            if (!emailPattern.matcher(email).matches()) {
+                JOptionPane.showMessageDialog(this, "Invalid email address.", "Input Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
             Student student = new Student(studentId, name, nic, email, dob, gender, deptId);
@@ -354,6 +416,7 @@ public class StudentPageFrame extends JFrame {
         dobSpinner.setValue(new Date());
         genderCombo.setSelectedIndex(0);
         emailField.setText("");
-        deptIdField.setText("");
+        if (deptCombo.getItemCount() > 0)
+            deptCombo.setSelectedIndex(-1);
     }
 }
